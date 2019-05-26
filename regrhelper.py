@@ -66,6 +66,7 @@ class NNRegressor:
           print('No target name')
           return
 
+        self.target = target
         self.train_data = pd.read_csv(data)
 
         if os.path.isfile('features.csv'):
@@ -83,11 +84,11 @@ class NNRegressor:
 
         train_data, test_data = train_test_split(self.full_data, test_size=test_size, random_state=42).copy()
 
-        self.train_data_lables = train_data.filter(target, axis=1)
-        self.train_data = train_data.drop(target, axis=1)
+        self.train_data_lables = train_data.filter([target], axis=1)
+        self.train_data = train_data.drop([target], axis=1)
 
-        self.test_data_lables = test_data.filter(target, axis=1)
-        self.test_data = test_data.drop(target, axis=1)
+        self.test_data_lables = test_data.filter([target], axis=1)
+        self.test_data = test_data.drop([target], axis=1)
 
     def build_full_pipeline(self):
         steps = [
@@ -160,7 +161,7 @@ class NNRegressor:
 
     def no_tune_model(self):
         self.final_model = self.regressor
-        self.final_model.fit(self.train_data_prepared, self.train_data_lables)
+        self.final_model.fit(self.train_data_prepared, self.train_data_lables.values.ravel())
         
         print('best estimator is \n', self.final_model)
         self.train_predict()
@@ -184,7 +185,7 @@ class NNRegressor:
             print('Unsupported tune method', searchCV)
             return
 
-        self.searchCV.fit(self.train_data_prepared, self.train_data_lables)
+        self.searchCV.fit(self.train_data_prepared, self.train_data_lables.values.ravel())
         self.final_model = self.searchCV.best_estimator_
         print('best estimator is \n', self.final_model)
         self.train_predict()
@@ -192,9 +193,9 @@ class NNRegressor:
     def train_predict(self):
         self.test_data_prepared = self.full_pipeline.transform(self.test_data)
         y_predicted = self.final_model.predict(self.test_data_prepared)
-        mape = np.mean(np.abs((self.test_data_lables - y_predicted)/self.test_data_lables))
+        mape = np.mean(np.abs((self.test_data_lables[self.target] - y_predicted)/self.test_data_lables[self.target]))
         print('mape for validate set', mape)
           
         y_predicted = self.final_model.predict(self.train_data_prepared)
-        mape = np.mean(np.abs((self.train_data_lables - y_predicted)/self.train_data_lables))
+        mape = np.mean(np.abs((self.train_data_lables[self.target] - y_predicted)/self.train_data_lables[self.target]))
         print('mape for train    set', mape)
