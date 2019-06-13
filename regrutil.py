@@ -5,27 +5,39 @@ import pandas as pd
 import re
 from sklearn.decomposition import PCA
 
+
+# def validate(nnr) - Выводит геометрию и NAN значения для тренировочного и испытательного набора
+# def show_pipiline_info(pipeline)
+# def show_hist(data)
+# def display_scores(scores)
+# def show_features_importances(nnr, num_to_plot = 10, save_to_file = False) - Печатает/рисует сортированный список важности признака согласно feature_importances_
+# def show_searchCV_results(nnr) - Печатает результаты тюнинга с помощью searchCV
+# def show_pca_explained_variances(nnr) - Печатает объясненную дисперсию для PCA
+
+
+# Выводит геометрию и NAN значения для тренировочного и испытательного набора
 def validate(nnr):
   print("NNRegressor, train data size is              : ", nnr.train_data.shape)
-  print("NNRegressor, train lables size is            : ", nnr.train_data_lables.shape)
   if hasattr(nnr, 'test_data'):
     print("NNRegressor, test data size is             : ", nnr.test_data.shape)
+
+  print("NNRegressor, train lables size is            : ", nnr.train_data_lables.shape)
   if hasattr(nnr, 'test_data_lables'):
-    print("NNRegressor, test test_data_lables size is : ", nnr.test_data_lables.shape)
+    print("NNRegressor, test lables size is           : ", nnr.test_data_lables.shape)
 
   if hasattr(nnr, 'train_data_prepared'):
     print("NNRegressor, train prepared data size is   : ", nnr.train_data_prepared.shape)
   if hasattr(nnr, 'test_data_prepared'):
-    print("NNRegressor, test prepared data size is    : ", nnr.test_data_prepared.shape)
+    print("NNRegressor, test prepared data size is    : ", nnr.test_data_prepared.shape, "\n")
 
   print("Train data has NAN values                    : ", nnr.train_data.isnull().values.any())
   if hasattr(nnr, 'test_data'):
     print("Test data has NAN values                   : ", nnr.test_data.isnull().values.any())
 
-def validate_model(pipeline):
+def show_pipiline_info(pipeline):
   print("Pipeline transformers:\n", pipeline.transformers_)
   
-def hist(data):
+def show_hist(data):
   data.hist(bins=20, figsize=(10,7))
   plt.show()
 
@@ -34,6 +46,8 @@ def display_scores(scores):
     print("Mean:", scores.mean())
     print("Standard deviation:", scores.std())
 
+# Печатает сортированный список важности признака согласно feature_importances_
+# Рисует графическое представление этой информации в виде баров. Может сохранять в файл
 def show_features_importances(nnr, num_to_plot = 10, save_to_file = False):
   features = pd.Index([c for c in nnr.train_data.columns if nnr.train_data[c].dtype.name != 'object'])
   cat_attribs = nnr.train_data.drop(features, axis = 1)
@@ -80,6 +94,7 @@ def show_features_importances(nnr, num_to_plot = 10, save_to_file = False):
   plt.xlim([-1, num_to_plot])
   plt.legend(bars, [u''.join(features[i]) for i in feature_indices])
 
+# Печатает результаты тюнинга с помощью searchCV
 def show_searchCV_results(nnr):
   try:
     cvres = nnr.searchCV.cv_results_
@@ -89,6 +104,7 @@ def show_searchCV_results(nnr):
   except:
     print('NNRegressor does not use SearchCV')
 
+# Печатает объясненную дисперсию для PCA
 def show_pca_explained_variances(nnr):
   for s in nnr.full_pipeline.named_transformers_['num'].steps:
     if s[0] == 'pca':

@@ -61,44 +61,33 @@ class NNRegressor:
     #  данные разбиваются на наборы для тренировки и тестирования согласно параметру test_size
     # Также возможно указать, какие колонки из исходных данных должны быть использованы при работе.
     # Это используется, если существует файл features.csv
-    def read_train_data(self, data, label = 'None', target = 'None', drop_cat = False, threshold = 0, test_size=0.2):
+    def read_train_data(self, data_url, label_url = 'None', target = 'None', threshold = 0):
         if target == 'None':
           print('No target name')
           return
 
         self.target = target
-        self.train_data = pd.read_csv(data)
+        self.rtrain_data = pd.read_csv(data_url)
 
         if os.path.isfile('features.csv'):
           used_columns = pd.read_csv('features.csv').iloc[0:, 0]
-          self.train_data = self.train_data.filter(items = used_columns, axis = 1)
+          self.rtrain_data = self.rtrain_data.filter(items = used_columns, axis = 1)
 
-        if drop_cat == True:
-          self.train_data = rpd.drop_category_attrs(self.train_data)
+        dropped_items, self.rtrain_data = rpd.varianceThreshold(self.rtrain_data, threshold)
 
-        dropped_items, self.train_data = rpd.varianceThreshold(self.train_data, threshold)
-
-        if label != 'None':
-          self.train_data_lables = pd.read_csv(label).iloc[0:, 0]
-          self.full_data = pd.concat((self.train_data, self.train_data_lables), axis=1)
-
-        train_data, test_data = train_test_split(self.full_data, test_size=test_size, random_state=42).copy()
-
-        self.train_data_lables = train_data.filter([target], axis=1)
-        self.train_data = train_data.drop([target], axis=1)
-
-        self.test_data_lables = test_data.filter([target], axis=1)
-        self.test_data = test_data.drop([target], axis=1)
+        self.train_data_lables_url = label_url
 
     def build_full_pipeline(self):
         steps = [
                 ('imputer', SimpleImputer(strategy="median")),
-                ('pca', PCA(n_components=0.991)),
                 ('minmax_scaler', MinMaxScaler()),
         ]
         
-        if self.poly_features == True:
-          steps.insert(2, ('poly_features', PolynomialFeatures(self.poly_degree, self.interaction_only)))
+        if self.use_pca == True:
+          try:
+            pca = nnr.full_pipeline.named_transformers_['pca']
+          except:
+            steps.insert(1, ('pca', PCA(n_components=0.991)))
           
         num_pipeline = Pipeline(steps)
         
@@ -110,9 +99,35 @@ class NNRegressor:
                 ("cat", OneHotEncoder(), cat_attribs),
         ])
 
-    def prepare_train_data(self):
-        self.build_full_pipeline()
-        self.train_data_prepared = self.full_pipeline.fit_transform(self.train_data)
+    def prepare_train_data(self, use_pca, drop_cat = False, test_size=0.2):
+      if self.train_data_lables_url != 'None':
+        self.train_data_lables = pd.read_csv(self.train_data_lables_url).iloc[0:, 0]
+
+      self.use_pca = use_pca
+      self.train_data = self.rtrain_data.copy()
+      
+      if drop_cat == True:
+        self.train_data = rpd.drop_category_attrs(self.train_data)
+
+      self.full_data = pd.concat((self.train_data, self.train_data_lables), axis=1)
+      print('full data \n', self.full_data.head())
+
+      full_train_data, full_test_data = train_test_split(self.full_data, test_size=test_size, random_state=42)
+      
+      print('full train data \n', full_train_data.head())
+      print('full test data \n', full_test_data.head())
+
+      self.train_data_lables = full_train_data.filter([self.target], axis=1)
+      self.train_data = full_train_data.drop([self.target], axis=1)
+
+      self.test_data_lables = full_test_data.filter([self.target], axis=1)
+      self.test_data = full_test_data.drop([self.target], axis=1)
+
+      print('train lables data \n', self.train_data_lables.head())
+      print('test lables data \n', self.test_data_lables.head())
+
+      self.build_full_pipeline()
+      self.train_data_prepared = self.full_pipeline.fit_transform(self.train_data)
 
     def prepare_regressor(self, regressor, n_estimators=10, n_neighbors=5, max_depth=None, min_samples_leaf=1,
                           min_samples_split = 2, criterion = 'mse'):
@@ -167,10 +182,10 @@ class NNRegressor:
         self.train_predict()
 
     def predict(self, url, csv_file_to_save='results.csv'):
-        test_data = pd.read_csv(url)
-        test_data = test_data.filter(items = self.train_data.columns, axis = 1)
-        test_data_prepared = self.full_pipeline.transform(test_data)
-        pd.DataFrame(self.final_model.predict(test_data_prepared)).to_csv(
+        validate_data = pd.read_csv(url)
+        validate_data = validate_data.filter(items = self.train_data.columns, axis = 1)
+        validate_data_prepared = self.full_pipeline.transform(validate_data)
+        pd.DataFrame(self.final_model.predict(validate_data_prepared)).to_csv(
            csv_file_to_save, header=None, index=False)
 
     def tune_model(self, searchCV, params_cv = 'nan'):
@@ -195,7 +210,7 @@ class NNRegressor:
         y_predicted = self.final_model.predict(self.test_data_prepared)
         mape = np.mean(np.abs((self.test_data_lables[self.target] - y_predicted)/self.test_data_lables[self.target]))
         print('mape for validate set', mape)
-          
+
         y_predicted = self.final_model.predict(self.train_data_prepared)
         mape = np.mean(np.abs((self.train_data_lables[self.target] - y_predicted)/self.train_data_lables[self.target]))
         print('mape for train    set', mape)
