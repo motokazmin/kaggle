@@ -3,8 +3,8 @@ import pandas as pd
 # def varianceThreshold(data, threshold) - Удаляет признаки с дисперсией, меньшей чем threshold
 # def drop_category_attrs(data) - Удаляет все категориальные признаки
 # def cat_features_to_int_features(data, dtype ='int64', target = 'None') - Трансформирует категориальные признаки в числовые - каждое уникальное значение категориального признака дает новый числовой
-# def features_totarget_units(df, target) - Высчитывает для каждого значения признака средние величины target. Заменяет значения признаков на посчитанные средние. Меняет тип пизнака на float
-# def drop_features_by_min_unique_vals(data, min_count) - Удаляет из данных признаки, у которых колличество уникальных значений меньше min_count
+# def drop_features_min_value(df, val = 0) - Удаляет из данных признаки, у которых минимальное значение меньше или равняется val
+# def drop_feature_unique_count(df, count = 2) - Удаляет из данных признаки, у которых колличество уникальных значений меньше count
 
 from sklearn.feature_selection import VarianceThreshold
 
@@ -33,7 +33,16 @@ def drop_category_attrs(data):
   cat_attribs = [c for c in data.columns if data[c].dtype.name == 'object']
   return data.drop(cat_attribs, axis=1)
 
-# Трансформирует категориальные признаки в числовые - каждое уникальное
+# Удаляет из данных признаки, у которых минимальное значение меньше или равняется val
+def drop_features_min_value(df, val = 0):
+  return df.loc[:, (df.min(axis=0) > 0)]
+
+# Удаляет из данных признаки, у которых колличество уникальных значений меньше или равняется count
+def drop_feature_unique_count(df, count = 2):
+  return df.loc[:, (df.nunique() > count)]
+
+
+# Трансформирует категориальные признаки в OneHot - каждое уникальное
 # значение категориального признака дает новый числовой
 def cat_features_to_int_features(data, dtype ='int64', target = 'None'):
   if target != 'None':
@@ -59,30 +68,3 @@ def cat_features_to_int_features(data, dtype ='int64', target = 'None'):
   # Возвращает модифицированный дата фрейм в виде: числовые, модифицированные категориальные
   # аттрибуты и таргет(если присутствовал)
   return modified_data
-
-# Высчитывает для каждого значения признака средние величины target. Заменяет значения признаков
-# на посчитанные средние. Меняет тип пизнака на float
-def features_totarget_units(df, target):
-  for f in df:
-    if f == target:
-      continue
-
-    features = df.filter(items = [f, target])
-    gb = features.groupby([f])
-    gb = gb.mean()
-
-    for i in range(gb.index.shape[0]):
-      df[f] = df[f].apply(lambda x: gb.values[i] if x == gb.index[i] else x)
-    df[f] = df[f].astype('float')
-
-  return df
-
-# Удаляет из данных признаки, у которых колличество уникальных значений меньше min_count
-def drop_features_by_min_unique_vals(data, min_count):
-  exclude = []
-  for i in data.columns:
-    shape = data.groupby(i).count().shape[0]
-    if shape < min_count:
-      exclude.append(str(i))
-
-  return data.drop(exclude, axis = 1)

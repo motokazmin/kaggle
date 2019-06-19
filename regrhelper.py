@@ -110,21 +110,14 @@ class NNRegressor:
         self.train_data = rpd.drop_category_attrs(self.train_data)
 
       self.full_data = pd.concat((self.train_data, self.train_data_lables), axis=1)
-      print('full data \n', self.full_data.head())
 
       full_train_data, full_test_data = train_test_split(self.full_data, test_size=test_size, random_state=42)
       
-      print('full train data \n', full_train_data.head())
-      print('full test data \n', full_test_data.head())
-
       self.train_data_lables = full_train_data.filter([self.target], axis=1)
       self.train_data = full_train_data.drop([self.target], axis=1)
 
       self.test_data_lables = full_test_data.filter([self.target], axis=1)
       self.test_data = full_test_data.drop([self.target], axis=1)
-
-      print('train lables data \n', self.train_data_lables.head())
-      print('test lables data \n', self.test_data_lables.head())
 
       self.build_full_pipeline()
       self.train_data_prepared = self.full_pipeline.fit_transform(self.train_data)
