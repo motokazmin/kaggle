@@ -29,14 +29,3 @@ def run_sequence_plot(x, y, title = None, label=None , xlabel="time", ylabel="se
     plt.grid(alpha=0.3);
     plt.legend(loc='upper left')
     
-# function to write the definition of our function to the file
-def write_function_to_file(function, file):
-    if os.path.exists(file):
-        append_write = 'a' # append if already exists
-    else:
-        append_write = 'w' # make a new file if not
-    with open(file, append_write) as file:
-        function_definition = inspect.getsource(function)
-        file.write(function_definition)
-
-write_function_to_file(run_sequence_plot, "m5_draw.py")
