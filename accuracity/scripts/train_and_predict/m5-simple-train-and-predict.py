@@ -42,8 +42,7 @@ def m5_simple_train_and_predict(df, use_floor, horisont = 30, seasonal_periods =
     triple_mse = RMSSE(train.to_numpy(), test.to_numpy(), triple_preds.to_numpy(), horisont)
 
     if Debug == True:
-        print('triple = ' + str(triple.params))
-        print("triple MSE: ", triple_mse)    
+        print('trend {}, seasonal {}, remove_bias {}, use_boxcox {}, triple MSE: {}'.format(trend, seasonal, remove_bias, use_boxcox, triple_mse))
     return triple_preds, triple_mse
 
 def m5_simple_predict(df, use_floor, horisont = 28, seasonal_periods = 7, trend = 'additive', seasonal = 'additive', remove_bias = False, use_boxcox = None, Debug = False):

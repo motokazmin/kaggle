@@ -10,7 +10,6 @@ def mean_absolute_percentage_error(y_true, y_pred):
     return (np.mean(np.abs((y_true - y_pred) / y_true)) * 100).fillna(1.0)
 
 def RMSSE(train, valid, predict, horisont): 
-    print('Hello m5-forecast-validation-utils!!!')
     assert type(train)   == type(np.array([]))
     assert type(valid)   == type(np.array([]))
     assert type(predict) == type(np.array([]))

@@ -16,7 +16,6 @@ for dirname, _, filenames in os.walk('/kaggle/input'):
 # You can write up to 5GB to the current directory (/kaggle/working/) that gets preserved as output when you create a version using "Save & Run All" 
 # You can also write temporary files to /kaggle/temp/, but they won't be saved outside of the current session
 
-import inspect
 import os
 import matplotlib.pyplot as plt
 from pandas.plotting import register_matplotlib_converters
@@ -28,4 +27,8 @@ def run_sequence_plot(x, y, title = None, label=None , xlabel="time", ylabel="se
     plt.ylabel(ylabel)
     plt.grid(alpha=0.3);
     plt.legend(loc='upper left')
-    
+
+#import plotly.express as px
+#df = df[(df.index >= '2015-01-01')]
+#fig = px.bar(df, x=df.index, y = good, height=350, title = 'Whole History')
+#fig.show()
