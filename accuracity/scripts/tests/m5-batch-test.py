@@ -66,3 +66,44 @@ def predict_more_one_month_goods(pivot_tbl, good_types, methods, last_month_use)
                 print('iteration {}/{}'.format(i, len(good_types)))
                 
     return good_types
+
+# Предсказывает для товаров, у которых есть история последних продаж больше месяца
+def predict_less_one_month_goods(pivot_tbl, good_types, methods):
+    good_types = good_types[(good_types.last_long_sales_interval_length <= 30)]
+    
+    for mrow in methods.itertuples():
+        if '_month' not in mrow.type:
+            continue
+            
+        mtype = mrow.type
+        trend = mrow.trend
+        seasonal = mrow.seasonal
+        remove_bias = mrow.remove_bias
+        use_boxcox = mrow.use_boxcox
+        
+        if trend == 'None':
+            trend = None
+        if seasonal == 'None':
+            seasonal = None
+        
+        print('type {}, used params: trend = {}, seasonal = {}, remove_bias = {}, use_boxcox = {}'.format(mtype, trend, seasonal, remove_bias, use_boxcox))
+
+        i = 0
+        for row in good_types.itertuples():
+            good = row.good
+            df = pivot_tbl[pivot_tbl.index >= row.start_last_long_sales]
+            try:
+                use_floor = get_rounding_type(pivot_tbl[good], horisont = 30)
+                good_types.loc[row.Index, 'use_floor'] = use_floor
+                triple_preds, rmmse = m5_simple_train_and_predict(df[good], use_floor, horisont = 30, seasonal_periods = 7, trend = trend,
+                                                                  seasonal = seasonal, remove_bias = remove_bias, use_boxcox = use_boxcox)
+                good_types.loc[row.Index, mtype] = rmmse
+            except:
+                i = i
+                print('Cannot process {}'.format(good))
+
+            i += 1
+            if i % 1000 == 0:
+                print('iteration {}/{}'.format(i, len(good_types)))
+                
+    return good_types
